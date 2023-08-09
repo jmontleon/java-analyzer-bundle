@@ -2,16 +2,17 @@ FROM registry.access.redhat.com/ubi9/ubi AS jdtls-download
 WORKDIR /jdtls
 RUN curl -o jdtls.tar.gz https://download.eclipse.org/jdtls/milestones/1.16.0/jdt-language-server-1.16.0-202209291445.tar.gz &&\
 	tar -xvf jdtls.tar.gz --no-same-owner &&\
-	chmod 755 /jdtls/bin/jdtls
+	chmod 755 /jdtls/bin/jdtls &&\
+        rm -rf jdtls.tar.gz
 
 FROM registry.access.redhat.com/ubi9/ubi AS maven-index
 RUN curl -o nexus-maven-repository-index.gz https://repo.maven.apache.org/maven2/.index/nexus-maven-repository-index.gz &&\
-	gunzip -k nexus-maven-repository-index.gz &&\
-	grep -oaP '[a-z][a-zA-Z0-9_.-]+\|[a-zA-Z][a-zA-Z0-9_.-]+\|([a-zA-Z0-9_.-]+\|)?(sources|pom|jar|maven-plugin|ear|ejb|ejb-client|java-source|rar|war)\|(jar|war|ear|pom|war|rar)' nexus-maven-repository-index | cut -d'|' -f1 | sed 's/$/.*/' | sort | uniq > /maven.default.index
+	zgrep -oaP '[a-z][a-zA-Z0-9_.-]+\|[a-zA-Z][a-zA-Z0-9_.-]+\|([a-zA-Z0-9_.-]+\|)?(sources|pom|jar|maven-plugin|ear|ejb|ejb-client|java-source|rar|war)\|(jar|war|ear|pom|war|rar)' nexus-maven-repository-index.gz | cut -d'|' -f1 | sed 's/$/.*/' | sort | uniq > /maven.default.index &&\
+        rm -rf nexus-maven-repository-index.gz
 
 FROM registry.access.redhat.com/ubi9/ubi AS fernflower
 RUN dnf install -y maven-openjdk17 wget
-RUN wget https://github.com/JetBrains/intellij-community/archive/refs/tags/idea/231.9011.34.tar.gz -O intellij-community.tar && tar xf intellij-community.tar
+RUN wget https://github.com/JetBrains/intellij-community/archive/refs/tags/idea/231.9011.34.tar.gz -O intellij-community.tar && tar xf intellij-community.tar && rm -rf intellij-community.tar
 WORKDIR /intellij-community-idea-231.9011.34/plugins/java-decompiler/engine
 RUN export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 RUN ./gradlew build -x test
