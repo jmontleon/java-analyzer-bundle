@@ -1,0 +1,24 @@
+name: 'Generate Maven Index and Commit'
+on:
+  schedule:
+    - cron: '0 3 * * 0'
+jobs:
+  build_and_commit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install pigz
+      shell: bash
+      run: sudo apt-get install -y pigz
+    - name: 
+      run: |
+        curl -s -o nexus-maven-repository-index.gz https://repo.maven.apache.org/maven2/.index/nexus-maven-repository-index.gz
+        unpigz nexus-maven-repository-index.gz
+        cat nexus-maven-repository-index | parallel -j150% --pipe --block 100M --cat grep -oaP "'[a-z][a-zA-Z0-9_.-]+\|[a-zA-Z][a-zA-Z0-9_.-]+\|([a-zA-Z0-9_.-]+\|)?(sources|pom|jar|maven-plugin|ear|ejb|ejb-client|java-source|rar|war)\|(jar|war|ear|pom|war|rar)'" {} | cut -d'|' -f1 | sed 's/$/.*/' | sort | uniq > hack/maven.default.index
+        rm -rf nexus-maven-repository-index
+    - name: Commit Updated maven.index
+      uses: "docker://cdssnc/auto-commit-github-action"
+      needs: "Extract Maven Index"
+      args: ":ghost: Update Maven Index"
+      secrets: ${{ secrets.GH_TOKEN }}
