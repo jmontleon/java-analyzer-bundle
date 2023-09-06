@@ -12,16 +12,14 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Install pigz
+    - name: Install podman
       shell: bash
-      run: sudo apt-get install -y pigz
+      run: sudo apt-get install -y podman
     - name: 
       run: |
-        curl -s -o nexus-maven-repository-index.gz https://repo.maven.apache.org/maven2/.index/nexus-maven-repository-index.gz
-        unpigz nexus-maven-repository-index.gz
-        cat nexus-maven-repository-index | parallel -j150% --pipe --block 100M --cat grep -oaP "'[a-z][a-zA-Z0-9_.-]+\|[a-zA-Z][a-zA-Z0-9_.-]+\|([a-zA-Z0-9_.-]+\|)?(sources|pom|jar|maven-plugin|ear|ejb|ejb-client|java-source|rar|war)\|(jar|war|ear|pom|war|rar)'" {} | cut -d'|' -f1 | sed 's/$/.*/' | sort | uniq > hack/maven.default.index
-        rm -rf nexus-maven-repository-index
-    - name: Commit Updated maven.index
+        podman build -f hack/Dockerfile -t export hack/
+        podman cp $(podman create export):/unpack/maven.default.index ./hack  
+    - name: Commit Updated maven.default.index update
       uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: ":ghost: Update Maven Index"
