@@ -14,14 +14,5 @@ RUN cd /unpack/index \
  && java -jar $(find /root/.m2 -name indexer-cli-*-cli.jar) -u nexus-maven-repository-index.gz \
  && rm nexus-maven-repository-index.gz \
  && cd /unpack \
- && java -classpath $(find /root/.m2 -name lucene-core*.jar) export.java | pigz -k -p$(nproc) > export.gz \
- && rm -rf index \
- && unpigz -p$(nproc) export.gz \
- && cat export | \
-    parallel -j150% --pipe --block 100M --cat \
-    grep -oaP "'[a-z][a-zA-Z0-9_.-]+\|[a-zA-Z][a-zA-Z0-9_.-]+\|([a-zA-Z0-9_.-]+\|)?(sources|pom|jar|maven-plugin|ear|ejb|ejb-client|java-source|rar|war)\|(jar|war|ear|pom|war|rar)'" {} | \
-    cut -d'|' -f1 | \
-    sed 's/$/.*/' | \
-    sort | \
-    uniq > maven.default.index \
- && rm -rf export
+ && java -cp $(find /root/.m2 -name lucene-core*.jar) export.java \
+ && rm -rf index
