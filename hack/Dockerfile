@@ -2,8 +2,7 @@ FROM registry.access.redhat.com/ubi9/ubi
 RUN dnf module enable -y maven:3.8 \
  && dnf clean all \
  && dnf -y update \
- && dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
- && dnf -y install maven-openjdk17 git parallel pigz \
+ && dnf -y install maven-openjdk17 git \
  && dnf clean all
 RUN git clone https://github.com/apache/maven-indexer.git
 RUN cd maven-indexer/indexer-cli && mvn install -Denforcer.skip=true -Dmaven.test.skip=true
